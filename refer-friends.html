@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refer Friends</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #141E30, #243B55);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 400px;
+      transition: all 0.3s;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+
+    #referral-link {
+      background: #76c7c0;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 1.1em;
+      word-wrap: break-word;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #referral-link:hover {
+      background-color: #58b9a8;
+    }
+
+    button {
+      background: linear-gradient(135deg, #ff7e5f, #feb47b);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.1em;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    #referral-count {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+        max-width: 90%;
+      }
+      h1 { font-size: 1.8em; }
+      p { font-size: 1em; }
+      #referral-link { font-size: 1em; padding: 10px; }
+      button { padding: 12px 25px; font-size: 1em; }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+        max-width: 95%;
+      }
+      h1 { font-size: 1.6em; }
+      p { font-size: 0.9em; }
+      #referral-link { font-size: 0.9em; padding: 8px; }
+      button { padding: 10px 20px; font-size: 0.9em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Refer a Friend</h1>
+    <p>Invite your friends and earn 10% of their earnings!</p>
+    <p>Your Referral Link:</p>
+    <div id="referral-link" onclick="copyReferral()">Generating link...</div>
+    <button onclick="shareLink()">Share Link</button>
+    <div id="referral-count">Loading referral count...</div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    const BOT_TOKEN = "asdfghjkl"; // Your bot token
+
+    function generateReferralLink() {
+      const userId = tg.initDataUnsafe.user.id;
+      const referralLink = `https://t.me/YourBotUsername?start=${userId}`;
+      document.getElementById('referral-link').textContent = referralLink;
+    }
+
+    function getReferralCount() {
+      const userId = tg.initDataUnsafe.user.id;
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getReferralCount`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          document.getElementById('referral-count').textContent = `Your Referrals: ${data.result}`;
+        } else {
+          document.getElementById('referral-count').textContent = "Error fetching referral count";
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('referral-count').textContent = "Error fetching referral count";
+      });
+    }
+
+    function copyReferral() {
+      const referralText = document.getElementById('referral-link').textContent;
+      navigator.clipboard.writeText(referralText).then(() => {
+        tg.showAlert('Referral link copied to clipboard!');
+      });
+    }
+
+    function shareLink() {
+      const referralLink = document.getElementById('referral-link').textContent;
+      tg.shareUrl(referralLink);
+    }
+
+    tg.expand();
+    generateReferralLink();
+    getReferralCount();
+  </script>

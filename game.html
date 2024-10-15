@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Falling Game</title>
+  <style>
+    /* Make sure body does not scroll or move */
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+      height: 100vh; /* Full viewport height */
+    }
+
+    /* Blurred background with a smooth animation for the cool effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('gameback.jpg') no-repeat center center fixed;
+      background-size: cover;
+      filter: blur(10px) brightness(0.8); /* Slightly darkened and blurred */
+      z-index: -1;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 28px;
+      color: rgb(255, 255, 255);
+      padding: 10px 25px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      z-index: 10; /* Make sure the score stays on top */
+    }
+
+    .fig2 {
+      position: absolute;
+      width: 60px; /* Slightly larger for better interaction */
+      cursor: pointer;
+      z-index: 1;
+      transition: transform 0.2s ease;
+    }
+
+    .fig2:active {
+      transform: scale(1.2); /* Slight scale effect when clicked */
+    }
+
+    /* Popup styles for the final score */
+    #popup {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 50px;
+      border-radius: 20px;
+      text-align: center;
+      display: none;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+      z-index: 100; /* Popup above everything */
+      animation: popupAnimation 0.5s ease-out; /* Smooth popup */
+    }
+
+    #popup h1 {
+      font-size: 40px;
+      margin-bottom: 25px;
+    }
+
+    #popup button {
+      padding: 15px 30px;
+      background-color: #28a745;
+      color: white;
+      font-size: 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #popup button:hover {
+      background-color: #218838;
+    }
+
+    /* Keyframe for smooth popup effect */
+    @keyframes popupAnimation {
+      0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Make sure the game screen is not scrollable or movable */
+    html, body {
+      touch-action: none; /* Disable touch-based scrolling */
+      overscroll-behavior: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="score">Score: <span id="score-value">0</span></div>
+  </div>
+
+  <!-- Popup for final score -->
+  <div id="popup">
+    <h1>You've scored: <span id="final-score">0</span></h1>
+    <button id="back-home">Back to Homepage</button>
+  </div>
+
+  <script>
+    let score = 0;
+    const scoreEl = document.getElementById('score-value');
+    const finalScoreEl = document.getElementById('final-score');
+    const popup = document.getElementById('popup');
+    const backHomeBtn = document.getElementById('back-home');
+    const gameContainer = document.getElementById('game-container');
+
+    let createFigIntervalId;
+
+    // Function to create a falling fig2
+    function createFallingFig2() {
+      const fig2 = document.createElement('img');
+      fig2.src = 'fig2.png';
+      fig2.classList.add('fig2');
+      fig2.style.left = Math.random() * window.innerWidth + 'px';
+      fig2.style.top = '-60px'; // Start above the screen
+      gameContainer.appendChild(fig2);
+
+      fig2.addEventListener('click', () => {
+        score += 3;
+        scoreEl.textContent = score;
+        fig2.remove();
+      });
+
+      // Make the fig fall
+      const fallingIntervalId = setInterval(() => {
+        const currentTop = parseFloat(fig2.style.top);
+        if (currentTop > window.innerHeight) {
+          fig2.remove();
+          clearInterval(fallingIntervalId);
+        } else {
+          fig2.style.top = currentTop + Math.random() * 7 + 3 + 'px'; // Randomize falling speed
+        }
+      }, 30);
+    }
+
+    // Create more figs by increasing the frequency of fig creation
+    createFigIntervalId = setInterval(() => {
+      for (let i = 0; i < 3; i++) { // Create 3 figs per second
+        createFallingFig2();
+      }
+    }, 1000);
+
+    // After 30 seconds, stop the game, show popup with score and update balance
+    setTimeout(() => {
+      // Stop creating new figs and stop existing ones from falling
+      clearInterval(createFigIntervalId);
+      const figs = document.querySelectorAll('.fig2');
+      figs.forEach(fig => fig.remove());
+
+      let existingBalance = localStorage.getItem('balance') ? parseInt(localStorage.getItem('balance')) : 0;
+      localStorage.setItem('balance', existingBalance + score);
+
+      // Show final score in the popup
+      finalScoreEl.textContent = score;
+      popup.style.display = 'block';
+    }, 30000);
+
+    // Redirect back to index.html when the button is clicked
+    backHomeBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

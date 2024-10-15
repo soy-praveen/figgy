@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fig Rain Clicker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #282c34;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #coin {
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+        }
+        #bar {
+            width: 300px;
+            height: 30px;
+            background-color: #ddd;
+            margin: 20px auto;
+        }
+        #bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 100%;
+        }
+        .falling-coin {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #modal-container {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        #modal {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #modal button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <button id="start-button">Start Game</button>
+        <div id="time-left"></div>
+        <div id="balance"></div>
+        <div id="high-score"></div>
+    </div>
+
+    <div id="modal-container">
+        <div id="modal">
+            <p>Game Over!</p>
+            <button id="close-modal">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const TAP_GAME_DURATION = 30000; // 30 seconds
+        const BAR_COIN_LIMIT = 1000;
+        const BAR_COIN_RESTORE_RATE = 500; // 1 coin per 0.5 seconds
+        const FALLING_COIN_INTERVAL = 1000; // New coin every 1 second
+        const FALLING_COIN_VALUE = 20;
+
+        let balance = 0;
+        let barCoins = BAR_COIN_LIMIT;
+        let gameActive = false;
+        let timeLeft = TAP_GAME_DURATION;
+        let fallingCoins = [];
+        let gameInterval;
+        let highScore = localStorage.getItem('highScore') || 0;
+
+        const startButton = document.getElementById('start-button');
+        const timeLeftDisplay = document.getElementById('time-left');
+        const balanceDisplay = document.getElementById('balance');
+        const highScoreDisplay = document.getElementById('high-score');
+        const barFill = document.getElementById('bar-fill');
+        const coin = document.getElementById('coin');
+        const gameContainer = document.getElementById('game-container');
+        const modalContainer = document.getElementById('modal-container');
+        const closeModalButton = document.getElementById('close-modal');
+
+        function updateDisplays() {
+            timeLeftDisplay.textContent = `Time left: ${timeLeft / 1000}s`;
+            balanceDisplay.textContent = `Balance: ${balance}`;
+            highScoreDisplay.textContent = `High Score: ${highScore}`;
+            barFill.style.width = `${(barCoins / BAR_COIN_LIMIT) * 100}%`;
+        }
+
+        function startGame() {
+            gameActive = true;
+            balance = 0;
+            barCoins = BAR_COIN_LIMIT;
+            timeLeft = TAP_GAME_DURATION;
+            fallingCoins = [];
+            startButton.style.display = 'none';
+            modalContainer.style.display = 'none';
+            updateDisplays();
+
+            gameInterval = setInterval(() => {
+                timeLeft -= 100;
+                barCoins = Math.min(BAR_COIN_LIMIT, barCoins + 1);
+                if (timeLeft % 1000 === 0) {
+                    createFallingCoin();
+                }
+                updateDisplays();
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 100);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            startButton.style.display = 'block';
+            modalContainer.style.display = 'flex';
+            if (balance > highScore) {
+                highScore = balance;
+                localStorage.setItem('highScore', highScore);
+            }
+            updateDisplays();
+            fallingCoins.forEach(coin => coin.remove());
+            fallingCoins = [];
+        }
+
+        function handleTap() {
+            if (gameActive && barCoins > 0) {
+                balance++;
+                barCoins = Math.max(0, barCoins - 1);
+                updateDisplays();
+            }
+        }
+
+        function createFallingCoin() {
+            const fallingCoin = document.createElement('img');
+            fallingCoin.src = 'fig.png'; // Replace with actual fig image
+            fallingCoin.alt = 'Falling coin';
+            fallingCoin.className = 'falling-coin';
+            fallingCoin.style.left = `${Math.random() * (window.innerWidth - 50)}px`;
+            fallingCoin.style.top = '-50px';
+            fallingCoin.onclick = () => {
+                if (gameActive) {
+                    balance += FALLING_COIN_VALUE;
+                    updateDisplays();
+                    fallingCoin.remove();
+                }
+            };
+            gameContainer.appendChild(fallingCoin);
+            fallingCoins.push(fallingCoin);
+
+            let position = -50;
+            const fallingInterval = setInterval(() => {
+                if (position >= window.innerHeight) {
+                    clearInterval(fallingInterval);
+                    fallingCoin.remove();
+                } else {
+                    position += 5;
+                    fallingCoin.style.top = `${position}px`;
+                }
+            }, 50);
+        }
+
+        startButton.onclick = startGame;
+        coin.onclick = handleTap;
+        closeModalButton.onclick = () => modalContainer.style.display = 'none';
+
+        updateDisplays();
+    </script>
+</body>
+</html>
